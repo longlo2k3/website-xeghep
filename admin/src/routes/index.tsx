@@ -12,6 +12,7 @@ import { SettingsPage } from '@/features/settings';
 import { PricingPage } from '@/features/pricing';
 import { RedirectList } from '@/features/redirects';
 import { UserList } from '@/features/users';
+import { HelpCenterPage } from '@/features/help';
 import { DashboardLayout } from '@/layouts/DashboardLayout';
 
 function NotFoundPage() {
@@ -64,6 +65,14 @@ export function AppRoutes() {
           />
           <Route
             path="/routes/:id"
+            element={
+              <RoleGuard allowedRoles={['admin', 'editor']}>
+                <RouteForm />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="/routes/:id/view"
             element={
               <RoleGuard allowedRoles={['admin', 'editor']}>
                 <RouteForm />
@@ -218,6 +227,15 @@ export function AppRoutes() {
             element={
               <RoleGuard allowedRoles={['admin']}>
                 <UserList />
+              </RoleGuard>
+            }
+          />
+          {/* Cẩm nang Hướng dẫn & Trợ giúp Vận hành CMS (Dành cho tất cả vai trò) */}
+          <Route
+            path="/help"
+            element={
+              <RoleGuard allowedRoles={['admin', 'editor', 'dispatcher']}>
+                <HelpCenterPage />
               </RoleGuard>
             }
           />

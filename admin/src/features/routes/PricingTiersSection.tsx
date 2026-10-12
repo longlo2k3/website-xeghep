@@ -19,6 +19,7 @@ export interface PricingTiersSectionProps {
   value: PricingTiersState;
   onChange: (value: PricingTiersState) => void;
   error?: string | null;
+  readOnly?: boolean;
 }
 
 /**
@@ -92,6 +93,7 @@ export function PricingTiersSection({
   value,
   onChange,
   error,
+  readOnly = false,
 }: PricingTiersSectionProps) {
   // Quản lý riêng priceType được chọn thủ công để tránh mất trạng thái khi min/max chưa gõ
   const [overridePriceTypes, setOverridePriceTypes] = useState<Record<string, PriceType>>({});
@@ -296,7 +298,7 @@ export function PricingTiersSection({
                 </div>
 
                 <div className="flex items-center gap-1">
-                  {isConfigured && (
+                  {!readOnly && isConfigured && (
                     <Button
                       type="button"
                       variant="ghost"
@@ -333,13 +335,14 @@ export function PricingTiersSection({
                     <button
                       key={item.type}
                       type="button"
-                      onClick={() => handlePriceTypeChange(config.key, item.type)}
+                      disabled={readOnly}
+                      onClick={() => !readOnly && handlePriceTypeChange(config.key, item.type)}
                       data-testid={`tier-${testPrefix}-type-${item.type}`}
-                      className={`text-xs py-1.5 px-2 rounded-lg font-medium border text-center transition cursor-pointer ${
+                      className={`text-xs py-1.5 px-2 rounded-lg font-medium border text-center transition ${
                         activeType === item.type
                           ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
                           : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                      }`}
+                      } ${readOnly ? 'cursor-default opacity-85' : 'cursor-pointer'}`}
                     >
                       {item.label}
                     </button>
@@ -352,8 +355,9 @@ export function PricingTiersSection({
                   aria-label={`Loại giá ${config.title}`}
                   data-testid={`tier-${testPrefix}-price-type`}
                   value={activeType}
+                  disabled={readOnly}
                   onChange={(e) =>
-                    handlePriceTypeChange(config.key, e.target.value as PriceType)
+                    !readOnly && handlePriceTypeChange(config.key, e.target.value as PriceType)
                   }
                 >
                   <option value="fixed">fixed</option>
@@ -379,6 +383,7 @@ export function PricingTiersSection({
                       type="number"
                       placeholder="VD: 200000"
                       value={currentTier?.min ?? ''}
+                      disabled={readOnly}
                       onChange={(e) =>
                         handleUpdatePrice(config.key, 'min', e.target.value)
                       }
@@ -394,6 +399,7 @@ export function PricingTiersSection({
                       type="number"
                       placeholder="VD: 250000"
                       value={currentTier?.max ?? ''}
+                      disabled={readOnly}
                       onChange={(e) =>
                         handleUpdatePrice(config.key, 'max', e.target.value)
                       }
@@ -416,6 +422,7 @@ export function PricingTiersSection({
                     type="number"
                     placeholder="VD: 200000"
                     value={currentTier?.min ?? ''}
+                    disabled={readOnly}
                     onChange={(e) =>
                       handleUpdatePrice(config.key, 'min', e.target.value)
                     }

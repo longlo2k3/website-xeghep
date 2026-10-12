@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useSearchParams, useLocation } from 'react-router-dom';
 import {
   ArrowLeft,
   Save,
@@ -12,6 +12,7 @@ import {
   X,
   Plus,
   Trash2,
+  Edit,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -104,6 +105,9 @@ const initialFormState: FormState = {
 export function RouteForm() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const isViewMode = searchParams.get('mode') === 'view' || location.pathname.endsWith('/view');
   const isEdit = Boolean(id && id !== 'new');
 
   const [form, setForm] = useState<FormState>(initialFormState);
@@ -444,46 +448,77 @@ export function RouteForm() {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-                {isEdit ? 'Chỉnh sửa tuyến đường' : 'Thêm tuyến đường mới'}
+                {isViewMode
+                  ? 'Chi tiết tuyến đường'
+                  : isEdit
+                  ? 'Chỉnh sửa tuyến đường'
+                  : 'Thêm tuyến đường mới'}
               </h1>
               <Badge variant={form.status === 'active' ? 'success' : 'secondary'} size="sm">
                 {form.status === 'active' ? 'Hoạt động' : form.status === 'draft' ? 'Bản nháp' : 'Lưu trữ'}
               </Badge>
+              {isViewMode && (
+                <Badge variant="outline" size="sm" className="bg-blue-50 text-blue-700 border-blue-200 font-semibold">
+                  Chế độ xem
+                </Badge>
+              )}
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
-              {isEdit ? `ID: #${id} — Cập nhật cấu hình bảng giá và thông tin tuyến` : 'Thiết lập đầy đủ thông tin cước và SEO cho tuyến liên tỉnh'}
+              {isViewMode
+                ? `ID: #${id} — Xem chi tiết cấu hình giá cước và thông tin tuyến đường`
+                : isEdit
+                ? `ID: #${id} — Cập nhật cấu hình bảng giá và thông tin tuyến`
+                : 'Thiết lập đầy đủ thông tin cước và SEO cho tuyến liên tỉnh'}
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2.5">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => handleSubmit('draft')}
-            disabled={isSubmitting}
-            className="cursor-pointer"
-            data-testid="save-draft-btn"
-          >
-            <Save className="w-4 h-4 mr-1.5" />
-            <span>Lưu nháp</span>
-          </Button>
+          {isViewMode ? (
+            <Button
+              type="button"
+              variant="default"
+              onClick={() => {
+                setSearchParams({});
+                navigate(`/routes/${id}`);
+              }}
+              className="cursor-pointer shadow-md shadow-blue-500/20"
+              data-testid="switch-to-edit-btn"
+            >
+              <Edit className="w-4 h-4 mr-1.5" />
+              <span>Chỉnh sửa tuyến này</span>
+            </Button>
+          ) : (
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => handleSubmit('draft')}
+                disabled={isSubmitting}
+                className="cursor-pointer"
+                data-testid="save-draft-btn"
+              >
+                <Save className="w-4 h-4 mr-1.5" />
+                <span>Lưu nháp</span>
+              </Button>
 
-          <Button
-            type="button"
-            variant="default"
-            onClick={() => handleSubmit()}
-            disabled={isSubmitting}
-            className="cursor-pointer shadow-md shadow-blue-500/20"
-            data-testid="save-route-btn"
-          >
-            {isSubmitting ? (
-              <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
-            ) : (
-              <Send className="w-4 h-4 mr-1.5" />
-            )}
-            <span>{isEdit ? 'Cập nhật tuyến' : 'Tạo tuyến đường'}</span>
-          </Button>
+              <Button
+                type="button"
+                variant="default"
+                onClick={() => handleSubmit()}
+                disabled={isSubmitting}
+                className="cursor-pointer shadow-md shadow-blue-500/20"
+                data-testid="save-route-btn"
+              >
+                {isSubmitting ? (
+                  <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4 mr-1.5" />
+                )}
+                <span>{isEdit ? 'Cập nhật tuyến' : 'Tạo tuyến đường'}</span>
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
@@ -502,7 +537,7 @@ export function RouteForm() {
       )}
 
       {/* CẢNH BÁO REDIRECT 301 NẾU ĐỔI SLUG CỦA TUYẾN ACTIVE */}
-      {isSlugChangedOnActive && (
+      {!isViewMode && isSlugChangedOnActive && (
         <div
           className="flex items-start gap-3 p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-200 text-sm"
           data-testid="slug-redirect-warning"
@@ -540,6 +575,7 @@ export function RouteForm() {
               label="Tên tuyến đường *"
               placeholder="Ví dụ: Hải Phòng ⇄ Hà Nội"
               value={form.name}
+              disabled={isViewMode}
               onChange={(e) => handleNameChange(e.target.value)}
               error={formErrors.name}
               data-testid="route-name-input"
@@ -550,19 +586,22 @@ export function RouteForm() {
           <div>
             <div className="flex items-center justify-between mb-1">
               <label className="text-xs font-semibold text-slate-700">Đường dẫn Slug *</label>
-              <button
-                type="button"
-                onClick={handleSlugSync}
-                className="text-[11px] text-blue-400 hover:text-blue-300 flex items-center gap-1 cursor-pointer"
-                title="Đồng bộ slug từ tên tuyến"
-              >
-                <Wand2 className="w-3 h-3" />
-                <span>Sinh lại slug</span>
-              </button>
+              {!isViewMode && (
+                <button
+                  type="button"
+                  onClick={handleSlugSync}
+                  className="text-[11px] text-blue-400 hover:text-blue-300 flex items-center gap-1 cursor-pointer"
+                  title="Đồng bộ slug từ tên tuyến"
+                >
+                  <Wand2 className="w-3 h-3" />
+                  <span>Sinh lại slug</span>
+                </button>
+              )}
             </div>
             <Input
               placeholder="hai-phong-ha-noi"
               value={form.slug}
+              disabled={isViewMode}
               onChange={(e) => {
                 setForm((prev) => ({ ...prev, slug: e.target.value }));
                 setIsSlugManuallyEdited(true);
@@ -579,6 +618,7 @@ export function RouteForm() {
               label="Điểm đi (Origin) *"
               placeholder="Ví dụ: Hải Phòng"
               value={form.origin}
+              disabled={isViewMode}
               onChange={(e) => {
                 setForm((prev) => ({ ...prev, origin: e.target.value }));
                 if (formErrors.origin) setFormErrors((prev) => ({ ...prev, origin: '' }));
@@ -594,6 +634,7 @@ export function RouteForm() {
               label="Điểm đến (Destination) *"
               placeholder="Ví dụ: Hà Nội"
               value={form.destination}
+              disabled={isViewMode}
               onChange={(e) => {
                 setForm((prev) => ({ ...prev, destination: e.target.value }));
                 if (formErrors.destination) setFormErrors((prev) => ({ ...prev, destination: '' }));
@@ -609,6 +650,7 @@ export function RouteForm() {
               label="Cự ly khoảng cách (km)"
               placeholder="Ví dụ: 120 km hoặc 105 - 120 km"
               value={form.distance}
+              disabled={isViewMode}
               onChange={(e) => setForm((prev) => ({ ...prev, distance: e.target.value }))}
               data-testid="route-distance-input"
             />
@@ -620,6 +662,7 @@ export function RouteForm() {
               label="Thời gian di chuyển ước tính"
               placeholder="Ví dụ: 1 giờ 30 phút hoặc 90 phút"
               value={form.duration}
+              disabled={isViewMode}
               onChange={(e) => setForm((prev) => ({ ...prev, duration: e.target.value }))}
               data-testid="route-duration-input"
             />
@@ -644,6 +687,7 @@ export function RouteForm() {
             rows={3}
             placeholder="Mô tả hero tuyến, lộ trình cao tốc, điểm nhấn dịch vụ..."
             value={form.description}
+            disabled={isViewMode}
             onChange={(e) => {
               setForm((prev) => ({ ...prev, description: e.target.value }));
               if (formErrors.description) setFormErrors((prev) => ({ ...prev, description: '' }));
@@ -667,8 +711,9 @@ export function RouteForm() {
               type="checkbox"
               id="route-is-banner-top"
               checked={form.isBannerTop}
+              disabled={isViewMode}
               onChange={(e) => setForm((prev) => ({ ...prev, isBannerTop: e.target.checked }))}
-              className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+              className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer disabled:cursor-not-allowed"
               data-testid="route-is-banner-top-checkbox"
             />
             <label htmlFor="route-is-banner-top" className="text-xs text-slate-800 font-medium cursor-pointer select-none">
@@ -682,6 +727,7 @@ export function RouteForm() {
               label="Nhãn hiển thị Banner"
               placeholder="Để trống = lấy theo tên tuyến"
               value={form.bannerLabel}
+              disabled={isViewMode}
               onChange={(e) => setForm((prev) => ({ ...prev, bannerLabel: e.target.value }))}
               data-testid="route-banner-label-input"
             />
@@ -694,6 +740,7 @@ export function RouteForm() {
               type="number"
               placeholder="0"
               value={form.sortOrder}
+              disabled={isViewMode}
               onChange={(e) => setForm((prev) => ({ ...prev, sortOrder: Number(e.target.value) || 0 }))}
               data-testid="route-sort-order-input"
             />
@@ -712,12 +759,13 @@ export function RouteForm() {
                 <button
                   key={region}
                   type="button"
-                  onClick={() => handleToggleRegion(region)}
-                  className={`text-xs px-3 py-1.5 rounded-xl border font-medium transition cursor-pointer ${
+                  disabled={isViewMode}
+                  onClick={() => !isViewMode && handleToggleRegion(region)}
+                  className={`text-xs px-3 py-1.5 rounded-xl border font-medium transition ${
                     isSelected
                       ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
                       : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                  }`}
+                  } ${isViewMode ? 'cursor-default opacity-85' : 'cursor-pointer'}`}
                   data-testid={`region-pill-${region}`}
                 >
                   {region}
@@ -742,6 +790,7 @@ export function RouteForm() {
             </label>
             <Select
               value={form.status}
+              disabled={isViewMode}
               onChange={(e) => setForm((prev) => ({ ...prev, status: e.target.value as RouteStatus }))}
               options={[
                 { value: 'active', label: 'Hoạt động (Active)' },
@@ -759,6 +808,7 @@ export function RouteForm() {
               label="Hạn áp dụng bảng giá (Bắt buộc) *"
               type="date"
               value={form.priceValidUntil}
+              disabled={isViewMode}
               onChange={(e) => {
                 setForm((prev) => ({ ...prev, priceValidUntil: e.target.value }));
                 if (formErrors.priceValidUntil) {
@@ -776,6 +826,7 @@ export function RouteForm() {
               label="Giờ hoạt động"
               placeholder="VD: 24/7 hoặc 05:00 - 22:00"
               value={form.operatingHoursText}
+              disabled={isViewMode}
               onChange={(e) => setForm((prev) => ({ ...prev, operatingHoursText: e.target.value }))}
               data-testid="route-operating-hours-input"
             />
@@ -788,6 +839,7 @@ export function RouteForm() {
             label="Tần suất khai thác chuyến"
             placeholder="VD: 30 - 60 phút / chuyến"
             value={form.frequencyText}
+            disabled={isViewMode}
             onChange={(e) => setForm((prev) => ({ ...prev, frequencyText: e.target.value }))}
             data-testid="route-frequency-input"
           />
@@ -798,6 +850,7 @@ export function RouteForm() {
       <Card className="p-6">
         <PricingTiersSection
           value={form.pricing}
+          readOnly={isViewMode}
           onChange={(newPricing) => {
             setForm((prev) => ({ ...prev, pricing: newPricing }));
             if (formErrors.pricing) {
@@ -822,14 +875,16 @@ export function RouteForm() {
                 alt={form.thumbnail.alt || 'Ảnh đại diện tuyến'}
                 className="w-full h-full object-cover"
               />
-              <button
-                type="button"
-                onClick={() => setForm((prev) => ({ ...prev, thumbnail: null }))}
-                className="absolute top-1 right-1 p-1 bg-slate-900/80 hover:bg-rose-600 text-white rounded-lg transition cursor-pointer"
-                title="Gỡ ảnh"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
+              {!isViewMode && (
+                <button
+                  type="button"
+                  onClick={() => setForm((prev) => ({ ...prev, thumbnail: null }))}
+                  className="absolute top-1 right-1 p-1 bg-slate-900/80 hover:bg-rose-600 text-white rounded-lg transition cursor-pointer"
+                  title="Gỡ ảnh"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
           ) : (
             <div className="w-40 h-28 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 flex flex-col items-center justify-center text-slate-400 shrink-0">
@@ -839,17 +894,19 @@ export function RouteForm() {
           )}
 
           <div className="space-y-1.5">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setIsThumbnailModalOpen(true)}
-              data-testid="choose-thumbnail-btn"
-              className="cursor-pointer"
-            >
-              <ImageIcon className="w-4 h-4 mr-1.5" />
-              <span>{form.thumbnail ? 'Đổi ảnh đại diện' : 'Chọn ảnh đại diện'}</span>
-            </Button>
+            {!isViewMode && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setIsThumbnailModalOpen(true)}
+                data-testid="choose-thumbnail-btn"
+                className="cursor-pointer"
+              >
+                <ImageIcon className="w-4 h-4 mr-1.5" />
+                <span>{form.thumbnail ? 'Đổi ảnh đại diện' : 'Chọn ảnh đại diện'}</span>
+              </Button>
+            )}
             <p className="text-xs text-slate-500">
               Ảnh hiển thị trên thẻ card tuyến ở trang chủ và danh mục tuyến liên tỉnh.
             </p>
@@ -868,17 +925,19 @@ export function RouteForm() {
               </h3>
               <p className="text-[11px] text-slate-500">Mỗi dòng là một địa danh đón cụ thể</p>
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleAddPickup}
-              data-testid="add-pickup-btn"
-              className="text-xs h-7 px-2 cursor-pointer"
-            >
-              <Plus className="w-3 h-3 mr-1" />
-              Thêm
-            </Button>
+            {!isViewMode && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleAddPickup}
+                data-testid="add-pickup-btn"
+                className="text-xs h-7 px-2 cursor-pointer"
+              >
+                <Plus className="w-3 h-3 mr-1" />
+                Thêm
+              </Button>
+            )}
           </div>
 
           <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
@@ -887,19 +946,22 @@ export function RouteForm() {
                 <Input
                   placeholder="Ví dụ: Bến xe Niệm Nghĩa, Sân bay Cát Bi..."
                   value={p.text}
+                  disabled={isViewMode}
                   onChange={(e) => handleUpdatePickup(idx, e.target.value)}
                   data-testid={`pickup-input-${idx}`}
                 />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleRemovePickup(idx)}
-                  className="text-slate-400 hover:text-rose-600 p-2 h-auto cursor-pointer"
-                  title="Xóa điểm đón"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
+                {!isViewMode && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleRemovePickup(idx)}
+                    className="text-slate-400 hover:text-rose-600 p-2 h-auto cursor-pointer"
+                    title="Xóa điểm đón"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                )}
               </div>
             ))}
           </div>
@@ -914,17 +976,19 @@ export function RouteForm() {
               </h3>
               <p className="text-[11px] text-slate-500">Mỗi dòng là một địa danh trả cụ thể</p>
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleAddDropoff}
-              data-testid="add-dropoff-btn"
-              className="text-xs h-7 px-2 cursor-pointer"
-            >
-              <Plus className="w-3 h-3 mr-1" />
-              Thêm
-            </Button>
+            {!isViewMode && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleAddDropoff}
+                data-testid="add-dropoff-btn"
+                className="text-xs h-7 px-2 cursor-pointer"
+              >
+                <Plus className="w-3 h-3 mr-1" />
+                Thêm
+              </Button>
+            )}
           </div>
 
           <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
@@ -933,19 +997,22 @@ export function RouteForm() {
                 <Input
                   placeholder="Ví dụ: Bến xe Mỹ Đình, Sân bay Nội Bài..."
                   value={d.text}
+                  disabled={isViewMode}
                   onChange={(e) => handleUpdateDropoff(idx, e.target.value)}
                   data-testid={`dropoff-input-${idx}`}
                 />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleRemoveDropoff(idx)}
-                  className="text-slate-400 hover:text-rose-400 p-2 h-auto cursor-pointer"
-                  title="Xóa điểm trả"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
+                {!isViewMode && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleRemoveDropoff(idx)}
+                    className="text-slate-400 hover:text-rose-400 p-2 h-auto cursor-pointer"
+                    title="Xóa điểm trả"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                )}
               </div>
             ))}
           </div>
@@ -963,22 +1030,24 @@ export function RouteForm() {
               Các câu hỏi và giải đáp xuất hiện trên trang chi tiết tuyến đường để tối ưu SEO Rich Snippets.
             </p>
           </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleAddFaq}
-            data-testid="add-faq-btn"
-            className="text-xs cursor-pointer"
-          >
-            <Plus className="w-3.5 h-3.5 mr-1" />
-            <span>Thêm câu hỏi</span>
-          </Button>
+          {!isViewMode && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleAddFaq}
+              data-testid="add-faq-btn"
+              className="text-xs cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5 mr-1" />
+              <span>Thêm câu hỏi</span>
+            </Button>
+          )}
         </div>
 
         {form.faqs.length === 0 ? (
           <div className="text-center py-6 text-xs text-slate-500 border border-dashed border-slate-200 rounded-xl">
-            Chưa có câu hỏi thường gặp nào cho tuyến này. Bấm &ldquo;Thêm câu hỏi&rdquo; để bổ sung.
+            Chưa có câu hỏi thường gặp nào cho tuyến này.
           </div>
         ) : (
           <div className="space-y-4">
@@ -992,23 +1061,26 @@ export function RouteForm() {
                   <span className="text-xs font-semibold text-blue-600">
                     Câu hỏi #{idx + 1}
                   </span>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleRemoveFaq(idx)}
-                    className="text-slate-400 hover:text-rose-600 p-1.5 h-auto cursor-pointer"
-                    title="Xóa câu hỏi này"
-                    data-testid={`remove-faq-${idx}`}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                  {!isViewMode && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleRemoveFaq(idx)}
+                      className="text-slate-400 hover:text-rose-600 p-1.5 h-auto cursor-pointer"
+                      title="Xóa câu hỏi này"
+                      data-testid={`remove-faq-${idx}`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
                 </div>
 
                 <Input
                   label="Câu hỏi"
                   placeholder="Ví dụ: Xe đón trả tận nơi hay đón tại bến?"
                   value={faq.question}
+                  disabled={isViewMode}
                   onChange={(e) => handleUpdateFaq(idx, 'question', e.target.value)}
                   data-testid={`faq-question-${idx}`}
                 />
@@ -1018,6 +1090,7 @@ export function RouteForm() {
                   label="Câu trả lời"
                   placeholder="Ví dụ: Nhà xe đón trả tận nơi trong nội thành Hải Phòng và trả tại điểm yêu cầu..."
                   value={faq.answer}
+                  disabled={isViewMode}
                   onChange={(e) => handleUpdateFaq(idx, 'answer', e.target.value)}
                   data-testid={`faq-answer-${idx}`}
                 />
@@ -1041,6 +1114,7 @@ export function RouteForm() {
                 label="Tiêu đề SEO (Meta Title - Tối ưu 50–70 ký tự)"
                 placeholder={form.name ? `Xe Ghép ${form.name} Giá Rẻ` : 'Tiêu đề SEO trang tuyến'}
                 value={form.seo.metaTitle}
+                disabled={isViewMode}
                 onChange={(e) =>
                   setForm((prev) => ({
                     ...prev,
@@ -1057,13 +1131,14 @@ export function RouteForm() {
                 type="checkbox"
                 id="route-append-brand"
                 checked={form.seo.appendBrand}
+                disabled={isViewMode}
                 onChange={(e) =>
                   setForm((prev) => ({
                     ...prev,
                     seo: { ...prev.seo, appendBrand: e.target.checked },
                   }))
                 }
-                className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer disabled:cursor-not-allowed"
               />
               <label htmlFor="route-append-brand" className="text-xs text-slate-600 cursor-pointer">
                 Tự động nối thương hiệu &ldquo; | Xe Ghép Liên Tỉnh&rdquo; vào cuối tiêu đề SEO.
@@ -1077,6 +1152,7 @@ export function RouteForm() {
                 label="Mô tả SEO (Meta Description - Tối ưu 120–160 ký tự)"
                 placeholder={form.description || 'Mô tả tóm tắt dịch vụ đón trả tận nơi, giá cước, lịch trình...'}
                 value={form.seo.metaDescription}
+                disabled={isViewMode}
                 onChange={(e) =>
                   setForm((prev) => ({
                     ...prev,
@@ -1111,30 +1187,32 @@ export function RouteForm() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                {form.seo.ogImage && (
+              {!isViewMode && (
+                <div className="flex items-center gap-2">
+                  {form.seo.ogImage && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() =>
+                        setForm((prev) => ({ ...prev, seo: { ...prev.seo, ogImage: null } }))
+                      }
+                      className="text-xs text-slate-500 hover:text-rose-600 p-1.5 h-auto cursor-pointer"
+                    >
+                      Gỡ
+                    </Button>
+                  )}
                   <Button
                     type="button"
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
-                    onClick={() =>
-                      setForm((prev) => ({ ...prev, seo: { ...prev.seo, ogImage: null } }))
-                    }
-                    className="text-xs text-slate-500 hover:text-rose-600 p-1.5 h-auto cursor-pointer"
+                    onClick={() => setIsOgMediaModalOpen(true)}
+                    className="text-xs cursor-pointer"
                   >
-                    Gỡ
+                    {form.seo.ogImage ? 'Đổi ảnh OG' : 'Chọn ảnh riêng'}
                   </Button>
-                )}
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsOgMediaModalOpen(true)}
-                  className="text-xs cursor-pointer"
-                >
-                  {form.seo.ogImage ? 'Đổi ảnh OG' : 'Chọn ảnh riêng'}
-                </Button>
-              </div>
+                </div>
+              )}
             </div>
 
             {/* Checkbox Noindex */}
@@ -1143,13 +1221,14 @@ export function RouteForm() {
                 type="checkbox"
                 id="route-noindex"
                 checked={form.seo.noindex}
+                disabled={isViewMode}
                 onChange={(e) =>
                   setForm((prev) => ({
                     ...prev,
                     seo: { ...prev.seo, noindex: e.target.checked },
                   }))
                 }
-                className="w-4 h-4 rounded border-slate-300 text-rose-600 focus:ring-rose-500 cursor-pointer"
+                className="w-4 h-4 rounded border-slate-300 text-rose-600 focus:ring-rose-500 cursor-pointer disabled:cursor-not-allowed"
               />
               <label htmlFor="route-noindex" className="text-xs text-rose-600 cursor-pointer">
                 Chặn công cụ tìm kiếm lập chỉ mục tuyến này (noindex - loại khỏi sitemap.xml).
@@ -1173,39 +1252,56 @@ export function RouteForm() {
       <div className="flex items-center justify-between border-t border-slate-200 pt-5">
         <Link
           to="/routes"
-          className="text-xs text-slate-500 hover:text-slate-800 transition cursor-pointer"
+          className="text-xs text-slate-500 hover:text-slate-800 transition cursor-pointer flex items-center gap-1.5"
         >
-          ← Quay lại danh sách tuyến
+          <ArrowLeft className="w-4 h-4" />
+          <span>Quay lại danh sách tuyến</span>
         </Link>
 
-        <div className="flex items-center gap-3">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => handleSubmit('draft')}
-            disabled={isSubmitting}
-            className="cursor-pointer"
-          >
-            <Save className="w-4 h-4 mr-1.5" />
-            <span>Lưu nháp</span>
-          </Button>
-
+        {isViewMode ? (
           <Button
             type="button"
             variant="default"
-            onClick={() => handleSubmit()}
-            disabled={isSubmitting}
+            onClick={() => {
+              setSearchParams({});
+              navigate(`/routes/${id}`);
+            }}
             className="cursor-pointer shadow-md shadow-blue-500/20"
-            data-testid="submit-bottom-btn"
+            data-testid="bottom-switch-to-edit-btn"
           >
-            {isSubmitting ? (
-              <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
-            ) : (
-              <Send className="w-4 h-4 mr-1.5" />
-            )}
-            <span>{isEdit ? 'Cập nhật tuyến' : 'Tạo tuyến đường'}</span>
+            <Edit className="w-4 h-4 mr-1.5" />
+            <span>Chuyển sang Chỉnh sửa</span>
           </Button>
-        </div>
+        ) : (
+          <div className="flex items-center gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => handleSubmit('draft')}
+              disabled={isSubmitting}
+              className="cursor-pointer"
+            >
+              <Save className="w-4 h-4 mr-1.5" />
+              <span>Lưu nháp</span>
+            </Button>
+
+            <Button
+              type="button"
+              variant="default"
+              onClick={() => handleSubmit()}
+              disabled={isSubmitting}
+              className="cursor-pointer shadow-md shadow-blue-500/20"
+              data-testid="submit-bottom-btn"
+            >
+              {isSubmitting ? (
+                <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+              ) : (
+                <Send className="w-4 h-4 mr-1.5" />
+              )}
+              <span>{isEdit ? 'Cập nhật tuyến' : 'Tạo tuyến đường'}</span>
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Media Picker cho Thumbnail */}

@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import {
   Plus,
   Edit,
@@ -7,33 +7,34 @@ import {
   AlertCircle,
   RefreshCw,
   Star,
-} from 'lucide-react';
-import { Button } from '@/components/ui/Button';
-import { Select } from '@/components/ui/Select';
-import { Badge } from '@/components/ui/Badge';
-import { DataTable, type Column } from '@/components/common/DataTable';
-import { StatusBadge } from '@/components/common/StatusBadge';
-import { ConfirmDialog } from '@/components/common/ConfirmDialog';
-import { apiClient, getApiErrorMessage } from '@/lib/api-client';
-import { formatDateTime, formatVND } from '@/lib/utils';
-import type { RouteDoc, RouteRegion } from '@/types/routes';
-import type { PaginatedResponse } from '@/types/api';
+  Eye,
+} from "lucide-react";
+import { Button } from "@/components/ui/Button";
+import { Select } from "@/components/ui/Select";
+import { Badge } from "@/components/ui/Badge";
+import { DataTable, type Column } from "@/components/common/DataTable";
+import { StatusBadge } from "@/components/common/StatusBadge";
+import { ConfirmDialog } from "@/components/common/ConfirmDialog";
+import { apiClient, getApiErrorMessage } from "@/lib/api-client";
+import { formatVND } from "@/lib/utils";
+import type { RouteDoc, RouteRegion } from "@/types/routes";
+import type { PaginatedResponse } from "@/types/api";
 
 const REGION_OPTIONS: { label: string; value: string }[] = [
-  { label: 'Tất cả khu vực', value: 'all' },
-  { label: 'Hải Phòng', value: 'Hải Phòng' },
-  { label: 'Hà Nội', value: 'Hà Nội' },
-  { label: 'Hạ Long', value: 'Hạ Long' },
-  { label: 'Móng Cái', value: 'Móng Cái' },
-  { label: 'Bắc Ninh – Bắc Giang', value: 'Bắc Ninh – Bắc Giang' },
+  { label: "Tất cả khu vực", value: "all" },
+  { label: "Hải Phòng", value: "Hải Phòng" },
+  { label: "Hà Nội", value: "Hà Nội" },
+  { label: "Hạ Long", value: "Hạ Long" },
+  { label: "Móng Cái", value: "Móng Cái" },
+  { label: "Bắc Ninh – Bắc Giang", value: "Bắc Ninh – Bắc Giang" },
 ];
 
 const STATUS_OPTIONS = [
-  { label: 'Tất cả trạng thái', value: 'all' },
-  { label: 'Đang hoạt động (Active)', value: 'active' },
-  { label: 'Bản nháp (Draft)', value: 'draft' },
-  { label: 'Lưu trữ (Archived)', value: 'archived' },
-  { label: 'Tạm dừng (Inactive)', value: 'inactive' },
+  { label: "Tất cả trạng thái", value: "all" },
+  { label: "Đang hoạt động (Active)", value: "active" },
+  { label: "Bản nháp (Draft)", value: "draft" },
+  { label: "Lưu trữ (Archived)", value: "archived" },
+  { label: "Tạm dừng (Inactive)", value: "inactive" },
 ];
 
 export function RouteList() {
@@ -44,9 +45,9 @@ export function RouteList() {
   const [error, setError] = useState<string | null>(null);
 
   // Bộ lọc
-  const [selectedStatus, setSelectedStatus] = useState<string>('all');
-  const [selectedRegion, setSelectedRegion] = useState<string>('all');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState<string>("all");
+  const [selectedRegion, setSelectedRegion] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Xóa tuyến
   const [routeToDelete, setRouteToDelete] = useState<RouteDoc | null>(null);
@@ -56,12 +57,15 @@ export function RouteList() {
     try {
       setIsLoading(true);
       setError(null);
-      const res = await apiClient.get<PaginatedResponse<RouteDoc> | RouteDoc[]>('/routes', {
-        params: {
-          limit: 100,
-          sort: 'sortOrder',
+      const res = await apiClient.get<PaginatedResponse<RouteDoc> | RouteDoc[]>(
+        "/routes",
+        {
+          params: {
+            limit: 100,
+            sort: "sortOrder",
+          },
         },
-      });
+      );
 
       const data = res.data;
       if (Array.isArray(data)) {
@@ -101,17 +105,19 @@ export function RouteList() {
   const filteredRoutes = useMemo(() => {
     return routes.filter((item) => {
       // Lọc trạng thái
-      if (selectedStatus !== 'all' && item.status !== selectedStatus) {
+      if (selectedStatus !== "all" && item.status !== selectedStatus) {
         return false;
       }
 
       // Lọc vùng miền
-      if (selectedRegion !== 'all') {
+      if (selectedRegion !== "all") {
         const itemRegions = item.regions || [];
         const matchesRegion =
           itemRegions.includes(selectedRegion as RouteRegion) ||
           item.origin?.toLowerCase().includes(selectedRegion.toLowerCase()) ||
-          item.destination?.toLowerCase().includes(selectedRegion.toLowerCase());
+          item.destination
+            ?.toLowerCase()
+            .includes(selectedRegion.toLowerCase());
         if (!matchesRegion) return false;
       }
 
@@ -122,7 +128,12 @@ export function RouteList() {
         const matchesOrigin = item.origin?.toLowerCase().includes(q);
         const matchesDestination = item.destination?.toLowerCase().includes(q);
         const matchesSlug = item.slug?.toLowerCase().includes(q);
-        if (!matchesName && !matchesOrigin && !matchesDestination && !matchesSlug) {
+        if (
+          !matchesName &&
+          !matchesOrigin &&
+          !matchesDestination &&
+          !matchesSlug
+        ) {
           return false;
         }
       }
@@ -134,137 +145,107 @@ export function RouteList() {
   // Thống kê nhanh
   const stats = useMemo(() => {
     const total = routes.length;
-    const active = routes.filter((r) => r.status === 'active').length;
-    const draft = routes.filter((r) => r.status === 'draft').length;
+    const active = routes.filter((r) => r.status === "active").length;
+    const draft = routes.filter((r) => r.status === "draft").length;
     const bannerTop = routes.filter((r) => r.isBannerTop).length;
     return { total, active, draft, bannerTop };
   }, [routes]);
 
-  // Cấu hình các cột cho DataTable
+  // Cấu hình các cột cho DataTable: Tinh gọn các thông tin cốt lõi nhất
   const columns: Column<RouteDoc>[] = [
     {
-      key: 'name',
-      header: 'Tên tuyến đường',
+      key: "name",
+      header: "Tuyến đường & Lộ trình",
       sortable: true,
       render: (item) => (
-        <div className="max-w-xs md:max-w-md">
+        <div className="max-w-xs md:max-w-sm space-y-1">
           <Link
             to={`/routes/${item.id}`}
-            className="font-medium text-white hover:text-blue-400 transition-colors line-clamp-1 flex items-center gap-1.5"
+            className="font-semibold text-slate-900 hover:text-blue-600 transition-colors line-clamp-1 block"
             data-testid={`route-title-${item.id}`}
           >
-            <span>{item.name}</span>
+            {item.name}
           </Link>
-          <div className="flex items-center gap-1.5 text-xs text-slate-400 mt-0.5">
-            <span className="font-mono text-[11px] text-slate-500">/{item.slug}</span>
-            {item.regions && item.regions.length > 0 && (
-              <span className="text-[10px] text-blue-400/80 bg-blue-500/10 px-1 rounded">
-                {item.regions[0]}
-              </span>
-            )}
-          </div>
         </div>
       ),
     },
     {
-      key: 'slug',
-      header: 'Slug',
+      key: "priceFrom",
+      header: "Giá từ",
       sortable: true,
       render: (item) => (
-        <span className="font-mono text-xs text-slate-400 truncate max-w-[160px] block">
-          /{item.slug}
-        </span>
+        <div className="text-xs space-y-0.5">
+          <span className="font-bold text-emerald-600 font-mono text-sm block">
+            {item.priceFrom ? formatVND(item.priceFrom) : "—"}
+          </span>
+          <span className="text-[11px] text-slate-400">4 hạng vé cước</span>
+        </div>
       ),
     },
     {
-      key: 'origin',
-      header: 'Điểm đi',
-      sortable: true,
-      render: (item) => (
-        <span className="text-xs text-slate-700 font-medium">
-          {item.origin || '—'}
-        </span>
-      ),
-    },
-    {
-      key: 'destination',
-      header: 'Điểm đến',
-      sortable: true,
-      render: (item) => (
-        <span className="text-xs text-slate-700 font-medium">
-          {item.destination || '—'}
-        </span>
-      ),
-    },
-    {
-      key: 'distance',
-      header: 'Cự ly',
-      render: (item) => (
-        <span className="text-xs text-slate-500">
-          {item.distance ? `${item.distance}${!item.distance.includes('km') ? ' km' : ''}` : '—'}
-        </span>
-      ),
-    },
-    {
-      key: 'priceFrom',
-      header: 'Giá từ',
-      sortable: true,
-      render: (item) => (
-        <span className="text-xs font-semibold text-emerald-400 font-mono">
-          {item.priceFrom ? formatVND(item.priceFrom) : '—'}
-        </span>
-      ),
-    },
-    {
-      key: 'isBannerTop',
-      header: 'Banner Top',
-      align: 'center',
+      key: "isBannerTop",
+      header: "Banner Top",
+      align: "center",
       render: (item) => {
         if (!item.isBannerTop) {
-          return <span className="text-slate-600 text-xs">—</span>;
+          return <span className="text-slate-400 text-xs">—</span>;
         }
         return (
           <Badge
             variant="warning"
             size="sm"
-            className="bg-amber-500/15 text-amber-300 border border-amber-500/30 font-medium"
+            className="bg-amber-500/15 text-amber-700 border border-amber-500/30 font-medium"
             data-testid={`banner-top-badge-${item.id}`}
           >
-            <Star className="w-3 h-3 mr-1 fill-amber-400 text-amber-400 shrink-0" />
-            <span>{item.bannerLabel || 'Top'}</span>
+            <Star className="w-3 h-3 mr-1 fill-amber-400 text-amber-500 shrink-0" />
+            <span>{item.bannerLabel || "Top"}</span>
           </Badge>
         );
       },
     },
     {
-      key: 'status',
-      header: 'Trạng thái',
-      align: 'center',
-      render: (item) => <StatusBadge type="route" status={item.status} />,
-    },
-    {
-      key: 'updatedAt',
-      header: 'Cập nhật',
-      sortable: true,
+      key: "description",
+      header: "Thông tin thêm",
       render: (item) => (
-        <span className="text-xs text-slate-400">
-          {item.updatedAt ? formatDateTime(item.updatedAt) : '—'}
-        </span>
+        <div className="max-w-xs md:max-w-sm">
+          {item.description && (
+            <div className="text-xs text-slate-600 line-clamp-2">
+              {item.description}
+            </div>
+          )}
+        </div>
       ),
     },
     {
-      key: 'actions',
-      header: 'Thao tác',
-      align: 'right',
+      key: "status",
+      header: "Trạng thái",
+      align: "center",
+      render: (item) => <StatusBadge type="route" status={item.status} />,
+    },
+    {
+      key: "actions",
+      header: "Thao tác",
+      align: "right",
       render: (item) => (
-        <div className="flex items-center justify-end gap-1.5">
+        <div className="flex items-center justify-end gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate(`/routes/${item.id}?mode=view`)}
+            title="Xem chi tiết đầy đủ tuyến"
+            data-testid={`view-route-${item.id}`}
+            className="text-slate-500 hover:text-blue-600 hover:bg-blue-50 p-1.5 h-auto cursor-pointer rounded-lg"
+          >
+            <Eye className="w-4 h-4" />
+          </Button>
+
           <Button
             variant="ghost"
             size="sm"
             onClick={() => navigate(`/routes/${item.id}`)}
             title="Chỉnh sửa tuyến đường"
             data-testid={`edit-route-${item.id}`}
-            className="text-slate-400 hover:text-blue-400 p-1.5 h-auto cursor-pointer"
+            className="text-slate-500 hover:text-amber-600 hover:bg-amber-50 p-1.5 h-auto cursor-pointer rounded-lg"
           >
             <Edit className="w-4 h-4" />
           </Button>
@@ -275,7 +256,7 @@ export function RouteList() {
             onClick={() => setRouteToDelete(item)}
             title="Xóa tuyến đường"
             data-testid={`delete-route-${item.id}`}
-            className="text-slate-400 hover:text-rose-400 p-1.5 h-auto cursor-pointer"
+            className="text-slate-500 hover:text-rose-600 hover:bg-rose-50 p-1.5 h-auto cursor-pointer rounded-lg"
           >
             <Trash2 className="w-4 h-4" />
           </Button>
@@ -298,7 +279,8 @@ export function RouteList() {
             </Badge>
           </div>
           <p className="text-sm text-slate-500 mt-1">
-            Quản trị danh mục tuyến liên tỉnh, cấu hình 4 hạng vé cước, điểm đón trả và thông tin SEO.
+            Quản trị danh mục tuyến liên tỉnh, cấu hình 4 hạng vé cước, điểm đón
+            trả và thông tin SEO.
           </p>
         </div>
 
@@ -311,13 +293,15 @@ export function RouteList() {
             className="cursor-pointer"
             title="Tải lại danh sách"
           >
-            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+            <RefreshCw
+              className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`}
+            />
           </Button>
 
           <Button
             variant="default"
             size="sm"
-            onClick={() => navigate('/routes/new')}
+            onClick={() => navigate("/routes/new")}
             data-testid="add-route-btn"
             className="cursor-pointer shadow-md shadow-blue-500/20"
           >
@@ -344,20 +328,36 @@ export function RouteList() {
       {/* Thẻ thống kê tóm tắt */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="bg-white border border-slate-200 shadow-sm rounded-xl p-3.5">
-          <span className="text-xs text-slate-500 font-medium">Tổng số tuyến</span>
-          <div className="text-xl font-bold text-slate-900 mt-0.5">{stats.total}</div>
+          <span className="text-xs text-slate-500 font-medium">
+            Tổng số tuyến
+          </span>
+          <div className="text-xl font-bold text-slate-900 mt-0.5">
+            {stats.total}
+          </div>
         </div>
         <div className="bg-white border border-slate-200 shadow-sm rounded-xl p-3.5">
-          <span className="text-xs text-emerald-600 font-medium">Đang hoạt động</span>
-          <div className="text-xl font-bold text-emerald-600 mt-0.5">{stats.active}</div>
+          <span className="text-xs text-emerald-600 font-medium">
+            Đang hoạt động
+          </span>
+          <div className="text-xl font-bold text-emerald-600 mt-0.5">
+            {stats.active}
+          </div>
         </div>
         <div className="bg-white border border-slate-200 shadow-sm rounded-xl p-3.5">
-          <span className="text-xs text-amber-600 font-medium">Bản nháp / Lưu trữ</span>
-          <div className="text-xl font-bold text-amber-600 mt-0.5">{stats.draft}</div>
+          <span className="text-xs text-amber-600 font-medium">
+            Bản nháp / Lưu trữ
+          </span>
+          <div className="text-xl font-bold text-amber-600 mt-0.5">
+            {stats.draft}
+          </div>
         </div>
         <div className="bg-white border border-slate-200 shadow-sm rounded-xl p-3.5">
-          <span className="text-xs text-blue-600 font-medium">Hiện Banner Top</span>
-          <div className="text-xl font-bold text-blue-600 mt-0.5">{stats.bannerTop}</div>
+          <span className="text-xs text-blue-600 font-medium">
+            Hiện Banner Top
+          </span>
+          <div className="text-xl font-bold text-blue-600 mt-0.5">
+            {stats.bannerTop}
+          </div>
         </div>
       </div>
 
@@ -404,7 +404,7 @@ export function RouteList() {
         description={
           routeToDelete
             ? `Bạn có chắc chắn muốn xóa tuyến "${routeToDelete.name}" (${routeToDelete.slug})? Thao tác này không thể hoàn tác.`
-            : ''
+            : ""
         }
         confirmText="Xác nhận xóa"
         cancelText="Hủy bỏ"
@@ -413,6 +413,8 @@ export function RouteList() {
         onConfirm={handleDelete}
         onClose={() => setRouteToDelete(null)}
       />
+
+
     </div>
   );
 }

@@ -23,7 +23,7 @@ const sizeStyles: Record<ModalSize, string> = {
   lg: 'max-w-lg',
   xl: 'max-w-xl',
   '2xl': 'max-w-2xl',
-  full: 'max-w-[95vw] h-[90vh]',
+  full: 'max-w-[95vw] h-[85vh]',
 };
 
 export function Modal({
@@ -76,7 +76,7 @@ export function Modal({
       {/* Modal Dialog Body */}
       <div
         className={cn(
-          'relative w-full bg-white border border-slate-200 rounded-2xl shadow-2xl z-10 overflow-hidden flex flex-col',
+          'relative w-full max-h-[85vh] bg-white border border-slate-200 rounded-2xl shadow-2xl z-10 overflow-hidden flex flex-col',
           'animate-in zoom-in-95 duration-150',
           sizeStyles[size],
           className
@@ -84,7 +84,7 @@ export function Modal({
       >
         {/* Header */}
         {(title || description) && (
-          <div className="flex items-start justify-between p-5 border-b border-slate-100">
+          <div className="flex items-start justify-between p-5 border-b border-slate-100 shrink-0">
             <div className="space-y-1 pr-6">
               {title && (
                 <h3 className="text-base font-semibold text-slate-900 tracking-tight">
@@ -115,7 +115,7 @@ export function Modal({
 
         {/* Footer */}
         {footer && (
-          <div className="flex items-center justify-end gap-3 p-4 bg-slate-50 border-t border-slate-100">
+          <div className="flex items-center justify-end gap-3 p-4 bg-slate-50 border-t border-slate-100 shrink-0">
             {footer}
           </div>
         )}

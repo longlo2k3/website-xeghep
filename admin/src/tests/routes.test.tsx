@@ -351,9 +351,68 @@ describe('Routes & Pricing Tiers Module (Task T114 & T115)', () => {
         expect(apiClient.delete).toHaveBeenCalledWith('/routes/1');
       });
     });
+
+    it('điều hướng đến trang chi tiết /routes/1?mode=view khi bấm nút Xem chi tiết (Eye)', async () => {
+      vi.mocked(apiClient.get).mockResolvedValueOnce({
+        data: { docs: mockRoutes },
+      });
+
+      render(
+        <MemoryRouter initialEntries={['/routes']}>
+          <Routes>
+            <Route path="/routes" element={<RouteList />} />
+            <Route path="/routes/:id" element={<div data-testid="route-detail-page">Trang chi tiết / form</div>} />
+          </Routes>
+        </MemoryRouter>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('view-route-1')).toBeDefined();
+      });
+
+      // Bấm nút xem chi tiết tuyến ID=1
+      fireEvent.click(screen.getByTestId('view-route-1'));
+
+      // Đã chuyển sang trang chi tiết tuyến
+      await waitFor(() => {
+        expect(screen.getByTestId('route-detail-page')).toBeDefined();
+      });
+    });
   });
 
   describe('RouteForm Component (Task T115)', () => {
+    it('hiển thị đầy đủ thông tin ở chế độ chỉ đọc (view mode) khi URL có ?mode=view', async () => {
+      vi.mocked(apiClient.get).mockResolvedValueOnce({
+        data: { doc: mockRoutes[0] },
+      });
+
+      render(
+        <MemoryRouter initialEntries={['/routes/1?mode=view']}>
+          <Routes>
+            <Route path="/routes/:id" element={<RouteForm />} />
+          </Routes>
+        </MemoryRouter>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText('Chi tiết tuyến đường')).toBeDefined();
+        expect(screen.getByText('Chế độ xem')).toBeDefined();
+      });
+
+      // Nút chuyển sang chỉnh sửa
+      expect(screen.getByTestId('switch-to-edit-btn')).toBeDefined();
+
+      // Các trường input bị disabled ở chế độ xem
+      const nameInput = screen.getByTestId('route-name-input') as HTMLInputElement;
+      expect(nameInput.disabled).toBe(true);
+
+      const originInput = screen.getByTestId('route-origin-input') as HTMLInputElement;
+      expect(originInput.disabled).toBe(true);
+
+      // Nút lưu nháp và cập nhật bị ẩn
+      expect(screen.queryByTestId('save-draft-btn')).toBeNull();
+      expect(screen.queryByTestId('save-route-btn')).toBeNull();
+    });
     it('tự động sinh slug từ tên tuyến khi tạo mới', async () => {
       render(
         <MemoryRouter initialEntries={['/routes/new']}>
