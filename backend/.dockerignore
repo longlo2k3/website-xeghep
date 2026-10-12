@@ -1,0 +1,12 @@
+node_modules
+.next
+.git
+.gitignore
+*.log
+dev-*.log
+*.tsbuildinfo
+.env
+.env.local
+coverage
+media/*
+!media/.gitkeep

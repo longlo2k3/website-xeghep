@@ -1,0 +1,12 @@
+node_modules/
+.next/
+dist/
+coverage/
+*.tsbuildinfo
+.env
+.env.local
+backend/media/
+!backend/media/.gitkeep
+backend/.payload/
+*.log
+.DS_Store

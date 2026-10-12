@@ -1,0 +1,117 @@
+services:
+  # ==========================================
+  # 1. Database (PostgreSQL 16)
+  # ==========================================
+  db:
+    image: postgres:16-alpine
+    container_name: cms-db
+    restart: unless-stopped
+    ports:
+      # Ràng buộc vào 127.0.0.1 để đảm bảo an toàn, không mở cổng database ra internet
+      - "127.0.0.1:${DB_PORT:-5432}:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-cms}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cms_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-cms}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cms} -d ${POSTGRES_DB:-cms}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - cms-network
+
+  # ==========================================
+  # 2. Backend (Payload CMS 3 + Next.js 15)
+  # ==========================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: cms-backend
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_PORT:-3001}:3001"
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DATABASE_URI: postgresql://${POSTGRES_USER:-cms}:${POSTGRES_PASSWORD:-cms_dev_password}@db:5432/${POSTGRES_DB:-cms}
+      PAYLOAD_SECRET: ${PAYLOAD_SECRET:-change-me-32chars-minimum-super-secret-key-123456}
+      PAYLOAD_PUBLIC_SERVER_URL: ${PAYLOAD_PUBLIC_SERVER_URL:-http://localhost:3001}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      REVALIDATE_SECRET: ${REVALIDATE_SECRET:-change-me-revalidate}
+      LOOKUP_SECRET: ${LOOKUP_SECRET:-change-me-lookup}
+      IP_SALT: ${IP_SALT:-change-me-ip-salt}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
+      NOTIFY_FALLBACK_EMAIL: ${NOTIFY_FALLBACK_EMAIL:-ops@example.com}
+      CMS_URL: ${CMS_URL:-http://localhost:3001}
+      REVALIDATE_URL: ${REVALIDATE_URL:-http://website:3000}
+      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-admin@example.com}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-Admin123!}
+      PAYLOAD_DB_PUSH: ${PAYLOAD_DB_PUSH:-false}
+    volumes:
+      - cms_media:/app/media
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - cms-network
+
+  # ==========================================
+  # 3. Admin SPA (React 19 + Vite 6 + Nginx)
+  # ==========================================
+  admin:
+    build:
+      context: ./admin
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${ADMIN_VITE_API_URL:-/api}
+    container_name: cms-admin
+    restart: unless-stopped
+    ports:
+      - "${ADMIN_PORT:-5173}:80"
+    depends_on:
+      - backend
+    networks:
+      - cms-network
+
+  # ==========================================
+  # 4. Website Khách Hàng (Next.js 15)
+  # ==========================================
+  website:
+    build:
+      context: ./website
+      dockerfile: Dockerfile
+    container_name: cms-website
+    restart: unless-stopped
+    ports:
+      - "${WEBSITE_PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      CMS_URL: http://backend:3001
+      NEXT_PUBLIC_CMS_URL: ${NEXT_PUBLIC_CMS_URL:-}
+    depends_on:
+      - backend
+    networks:
+      - cms-network
+
+# ==========================================
+# Volumes lưu trữ dữ liệu bền vững
+# ==========================================
+volumes:
+  pgdata:
+    name: cms_pgdata
+  cms_media:
+    name: cms_media
+
+# ==========================================
+# Mạng nội bộ kết nối giữa các container
+# ==========================================
+networks:
+  cms-network:
+    name: cms-network
+    driver: bridge

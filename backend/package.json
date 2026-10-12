@@ -1,0 +1,51 @@
+{
+  "name": "cms-backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev -p 3001",
+    "build": "next build",
+    "start": "next start -p 3001",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "db:push": "node --import tsx src/scripts/pushSchema.ts",
+    "generate:types": "node --import tsx src/scripts/generateTypes.ts",
+    "seed": "node --import tsx src/seed/seed.ts",
+    "seed:admin": "node --import tsx src/seed/seedAdmin.ts",
+    "seed:media": "node --import tsx src/seed/seedMedia.ts",
+    "seed:routes": "node --import tsx src/seed/seedRoutes.ts",
+    "seed:pages": "node --import tsx src/seed/seedPages.ts",
+    "seed:articles": "node --import tsx src/seed/seedArticles.ts",
+    "seed:airport": "node --import tsx src/seed/seedAirport.ts",
+    "seed:distance": "node --import tsx src/seed/seedDistance.ts",
+    "seed:redirects": "node --import tsx src/seed/seedRedirects.ts",
+    "seed:company": "node --import tsx src/seed/seedCompany.ts",
+    "seed:pricing": "node --import tsx src/seed/seedPricingSettings.ts",
+    "seed:users": "node --import tsx src/seed/seedUsers.ts",
+    "anonymize:pii": "node --import tsx src/seed/anonymizePii.ts",
+    "test:us4": "vitest run tests/booking.stateMachine.test.ts tests/notify.test.ts"
+  },
+  "dependencies": {
+    "@payloadcms/db-postgres": "^3.90.2",
+    "@payloadcms/next": "^3.90.2",
+    "@payloadcms/richtext-lexical": "3.90.2",
+    "next": "~15.4.11",
+    "payload": "^3.90.2",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "sanitize-html": "^2.13.0",
+    "sharp": "^0.33.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@types/sanitize-html": "^2",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.7"
+  }
+}
