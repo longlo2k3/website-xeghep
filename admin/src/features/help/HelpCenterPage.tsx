@@ -26,7 +26,6 @@ import {
   SIDEBAR_GUIDES,
   ROLE_NAMES,
   ROLE_BADGE_COLORS,
-  WORKFLOW_STEPS,
   type SidebarGuideItem,
 } from "./helpData";
 
