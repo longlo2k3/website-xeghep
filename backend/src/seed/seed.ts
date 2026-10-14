@@ -35,6 +35,7 @@ for (const step of STEPS) {
   console.log(`\n=== Seed: ${step.name} (${step.file}) ===`);
   const result = spawnSync(process.execPath, ["--import", "tsx", scriptPath], {
     stdio: "inherit",
+    env: { ...process.env, NODE_ENV: "development", PAYLOAD_DB_PUSH: "true" },
   });
   if (result.status !== 0) {
     console.error(`Seed thất bại ở bước "${step.name}" (exit ${result.status}).`);
