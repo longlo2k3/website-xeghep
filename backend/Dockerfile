@@ -21,7 +21,7 @@ COPY . .
 
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
-ENV PORT=3001
+ENV PORT=4001
 ENV PAYLOAD_SECRET=build_dummy_secret_at_least_32_characters_long
 ENV DATABASE_URI=postgresql://cms:cms@localhost:5432/cms
 ENV PAYLOAD_DB_PUSH=false
@@ -35,7 +35,7 @@ FROM base AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
-ENV PORT=3001
+ENV PORT=4001
 ENV NEXT_TELEMETRY_DISABLED=1
 
 # Sao chép các tệp cần thiết cho production & các script seed/migration (tsx)
@@ -50,6 +50,6 @@ COPY --from=builder /app/next.config.ts ./next.config.ts
 # Thư mục lưu trữ media uploads (được mount volume từ docker-compose)
 RUN mkdir -p media
 
-EXPOSE 3001
+EXPOSE 4001
 
 CMD ["npm", "run", "start"]

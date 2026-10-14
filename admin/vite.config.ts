@@ -5,7 +5,7 @@ import { fileURLToPath, URL } from 'node:url';
 
 const proxyConfig = {
   '/api': {
-    target: 'http://localhost:3001',
+    target: 'http://localhost:4001',
     changeOrigin: true,
     timeout: 120000,
     rewrite: (path: string) =>
@@ -16,7 +16,7 @@ const proxyConfig = {
         .replace(/^\/api\/globals\/pricing-settings(\b|\/|\?)/, '/api/globals/pricing_settings$1'),
   },
   '/media': {
-    target: 'http://localhost:3001',
+    target: 'http://localhost:4001',
     changeOrigin: true,
     timeout: 120000,
     bypass: (req: any) => {
@@ -45,11 +45,11 @@ export default defineConfig({
     },
   },
   server: {
-    port: 5173,
+    port: 4002,
     proxy: proxyConfig,
   },
   preview: {
-    port: 5173,
+    port: 4002,
     proxy: proxyConfig,
   },
   test: {

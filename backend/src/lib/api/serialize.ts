@@ -50,7 +50,7 @@ export function toVietnamIso(date: Date): string {
 }
 
 export function serverBase(): string {
-  return (process.env.PAYLOAD_PUBLIC_SERVER_URL || 'http://localhost:3001').replace(/\/+$/, '');
+  return (process.env.PAYLOAD_PUBLIC_SERVER_URL || 'http://localhost:4001').replace(/\/+$/, '');
 }
 
 export type MediaLike =

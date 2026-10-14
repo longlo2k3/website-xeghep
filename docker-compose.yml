@@ -8,7 +8,7 @@ services:
     restart: unless-stopped
     ports:
       # Ràng buộc vào 127.0.0.1 để đảm bảo an toàn, không mở cổng database ra internet
-      - "127.0.0.1:${DB_PORT:-5432}:5432"
+      - "127.0.0.1:${DB_PORT:-5433}:5432"
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-cms}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cms_dev_password}
@@ -33,22 +33,22 @@ services:
     container_name: cms-backend
     restart: unless-stopped
     ports:
-      - "${BACKEND_PORT:-3001}:3001"
+      - "${BACKEND_PORT:-4001}:4001"
     environment:
       NODE_ENV: production
-      PORT: 3001
+      PORT: 4001
       DATABASE_URI: postgresql://${POSTGRES_USER:-cms}:${POSTGRES_PASSWORD:-cms_dev_password}@db:5432/${POSTGRES_DB:-cms}
       PAYLOAD_SECRET: ${PAYLOAD_SECRET:-change-me-32chars-minimum-super-secret-key-123456}
-      PAYLOAD_PUBLIC_SERVER_URL: ${PAYLOAD_PUBLIC_SERVER_URL:-http://localhost:3001}
-      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      PAYLOAD_PUBLIC_SERVER_URL: ${PAYLOAD_PUBLIC_SERVER_URL:-http://localhost:4001}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:4000}
       REVALIDATE_SECRET: ${REVALIDATE_SECRET:-change-me-revalidate}
       LOOKUP_SECRET: ${LOOKUP_SECRET:-change-me-lookup}
       IP_SALT: ${IP_SALT:-change-me-ip-salt}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
       NOTIFY_FALLBACK_EMAIL: ${NOTIFY_FALLBACK_EMAIL:-ops@example.com}
-      CMS_URL: ${CMS_URL:-http://localhost:3001}
-      REVALIDATE_URL: ${REVALIDATE_URL:-http://website:3000}
+      CMS_URL: ${CMS_URL:-http://localhost:4001}
+      REVALIDATE_URL: ${REVALIDATE_URL:-http://website:4000}
       SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-admin@example.com}
       SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-Admin123!}
       PAYLOAD_DB_PUSH: ${PAYLOAD_DB_PUSH:-false}
@@ -72,7 +72,7 @@ services:
     container_name: cms-admin
     restart: unless-stopped
     ports:
-      - "${ADMIN_PORT:-5173}:80"
+      - "${ADMIN_PORT:-4002}:80"
     depends_on:
       - backend
     networks:
@@ -88,11 +88,11 @@ services:
     container_name: cms-website
     restart: unless-stopped
     ports:
-      - "${WEBSITE_PORT:-3000}:3000"
+      - "${WEBSITE_PORT:-4000}:4000"
     environment:
       NODE_ENV: production
-      PORT: 3000
-      CMS_URL: http://backend:3001
+      PORT: 4000
+      CMS_URL: http://backend:4001
       NEXT_PUBLIC_CMS_URL: ${NEXT_PUBLIC_CMS_URL:-}
     depends_on:
       - backend

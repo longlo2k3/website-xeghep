@@ -1,10 +1,11 @@
 # 🚀 Hướng Dẫn Đóng Gói Docker & Triển Khai Lên VPS
 
 Hệ thống bao gồm 3 phân hệ được đóng gói hoàn chỉnh bằng Docker:
-1. **`website`**: Frontend khách hàng (Next.js 15) — Cổng mặc định `3000`
-2. **`admin`**: Giao diện quản trị SPA (React 19 + Vite 6 + Nginx) — Cổng mặc định `5173`
-3. **`backend`**: Hệ thống Core API & Payload CMS 3 (Next.js 15 + Sharp + PostgreSQL) — Cổng mặc định `3001`
-4. **`db`**: Cơ sở dữ liệu PostgreSQL 16 Alpine — Lưu trữ persistent qua Docker volume `cms_pgdata`
+
+1. **`website`**: Frontend khách hàng (Next.js 15) — Cổng mặc định `4000`
+2. **`admin`**: Giao diện quản trị SPA (React 19 + Vite 6 + Nginx) — Cổng mặc định `4002`
+3. **`backend`**: Hệ thống Core API & Payload CMS 3 (Next.js 15 + Sharp + PostgreSQL) — Cổng mặc định `4001`
+4. **`db`**: Cơ sở dữ liệu PostgreSQL 16 Alpine (Cổng host `5433`) — Lưu trữ persistent qua Docker volume `cms_pgdata`
 
 ---
 
@@ -29,7 +30,8 @@ Hệ thống bao gồm 3 phân hệ được đóng gói hoàn chỉnh bằng Do
   - **CPU**: 2 Cores trở lên.
   - **Ổ cứng**: SSD tối thiểu 25GB trống.
 
-*(Mẹo: Nếu VPS có 2GB RAM, hãy tạo 2GB Swap trước khi build để tránh bị tràn RAM / OOM Kill):*
+_(Mẹo: Nếu VPS có 2GB RAM, hãy tạo 2GB Swap trước khi build để tránh bị tràn RAM / OOM Kill):_
+
 ```bash
 sudo fallocate -l 2G /swapfile
 sudo chmod 600 /swapfile
@@ -68,6 +70,7 @@ docker compose version
 Bạn có thể đưa mã nguồn lên VPS bằng **Git** hoặc **Rsync/SCP**:
 
 ### Cách 1: Sử dụng Git (Khuyên dùng)
+
 ```bash
 cd /var/www
 git clone <URL_REPO_CUA_BAN>.git cms
@@ -75,6 +78,7 @@ cd cms
 ```
 
 ### Cách 2: Upload từ máy cá nhân qua rsync
+
 ```bash
 # Chạy lệnh này từ máy của bạn (trên Git Bash hoặc WSL / Linux)
 rsync -avz --exclude 'node_modules' --exclude '.next' --exclude 'dist' ./ user@ip_vps:/var/www/cms/
@@ -92,6 +96,7 @@ nano .env
 ```
 
 **Các thông số quan trọng cần cập nhật trong `.env`:**
+
 - `POSTGRES_PASSWORD`: Đặt mật khẩu DB bảo mật cao.
 - `PAYLOAD_SECRET`: Tạo chuỗi ngẫu nhiên từ 32 ký tự trở lên (ví dụ: `openssl rand -base64 32`).
 - `PAYLOAD_PUBLIC_SERVER_URL`: Tên miền API công khai (ví dụ: `https://api.xegheplientinh.vn`).
@@ -111,6 +116,7 @@ docker compose up -d --build
 ```
 
 Kiểm tra trạng thái các container:
+
 ```bash
 docker compose ps
 ```
@@ -118,12 +124,13 @@ docker compose ps
 Kết quả mong đợi:
 | Service | Container Name | Status | Ports |
 |---|---|---|---|
-| `db` | `cms-db` | Up (healthy) | `127.0.0.1:5432->5432/tcp` |
-| `backend` | `cms-backend` | Up | `0.0.0.0:3001->3001/tcp` |
-| `admin` | `cms-admin` | Up | `0.0.0.0:5173->80/tcp` |
-| `website` | `cms-website` | Up | `0.0.0.0:3000->3000/tcp` |
+| `db` | `cms-db` | Up (healthy) | `127.0.0.1:5433->5432/tcp` |
+| `backend` | `cms-backend` | Up | `0.0.0.0:4001->4001/tcp` |
+| `admin` | `cms-admin` | Up | `0.0.0.0:4002->80/tcp` |
+| `website` | `cms-website` | Up | `0.0.0.0:4000->4000/tcp` |
 
 Xem log thời gian thực nếu cần kiểm tra:
+
 ```bash
 docker compose logs -f backend
 ```
@@ -135,13 +142,17 @@ docker compose logs -f backend
 Khi khởi chạy lần đầu trên VPS mới, cơ sở dữ liệu còn trống. Bạn thực thi các lệnh sau trực tiếp vào container backend:
 
 ### 6.1. Tạo tài khoản Admin quản trị đầu tiên:
+
 ```bash
 docker compose exec backend npm run seed:admin
 ```
-*(Tài khoản được tạo theo thông tin `SEED_ADMIN_EMAIL` và `SEED_ADMIN_PASSWORD` trong file `.env`)*
+
+_(Tài khoản được tạo theo thông tin `SEED_ADMIN_EMAIL` và `SEED_ADMIN_PASSWORD` trong file `.env`)_
 
 ### 6.2. (Tùy chọn) Nạp bộ dữ liệu mẫu ban đầu:
+
 Nếu muốn nạp toàn bộ danh mục tuyến đường, bảng giá, bài viết, chính sách và media ban đầu:
+
 ```bash
 # Nạp toàn bộ dữ liệu hệ thống
 docker compose exec backend npm run seed
@@ -161,36 +172,46 @@ docker compose exec backend npm run seed
 Để gắn domain chính thức và bảo mật bằng HTTPS:
 
 ### 7.1. Trỏ DNS các bản ghi A về địa chỉ IP của VPS:
+
 - `@` (hoặc `xegheplientinh.vn`) -> `IP_VPS`
 - `www` -> `IP_VPS`
 - `admin` (hoặc `admin.xegheplientinh.vn`) -> `IP_VPS`
 - `api` (hoặc `api.xegheplientinh.vn`) -> `IP_VPS`
 
 ### 7.2. Cài Nginx trên host VPS:
+
 ```bash
 sudo apt install nginx certbot python3-certbot-nginx -y
 ```
 
 ### 7.3. Áp dụng cấu hình Reverse Proxy:
+
 Copy file `nginx-vps.conf.example` vào Nginx host:
+
 ```bash
 sudo cp nginx-vps.conf.example /etc/nginx/sites-available/cms.conf
 sudo ln -s /etc/nginx/sites-available/cms.conf /etc/nginx/sites-enabled/
 ```
+
 Chỉnh sửa tên miền thực tế của bạn trong `/etc/nginx/sites-available/cms.conf`:
+
 ```bash
 sudo nano /etc/nginx/sites-available/cms.conf
 ```
+
 Kiểm tra cú pháp và kích hoạt:
+
 ```bash
 sudo nginx -t
 sudo systemctl reload nginx
 ```
 
 ### 7.4. Cài đặt SSL miễn phí tự động gia hạn với Let's Encrypt:
+
 ```bash
 sudo certbot --nginx -d xegheplientinh.vn -d www.xegheplientinh.vn -d admin.xegheplientinh.vn -d api.xegheplientinh.vn
 ```
+
 Certbot sẽ tự động cấu hình HTTPS và cơ chế tự động gia hạn SSL!
 
 ---
@@ -198,6 +219,7 @@ Certbot sẽ tự động cấu hình HTTPS và cơ chế tự động gia hạn
 ## 8. Các Lệnh Vận Hành & Bảo Trì
 
 ### Xem log các dịch vụ
+
 ```bash
 # Xem log toàn bộ hệ thống
 docker compose logs -f
@@ -213,14 +235,18 @@ docker compose logs -f admin
 ```
 
 ### Cập nhật mã nguồn mới
+
 Khi bạn push code mới lên Git:
+
 ```bash
 git pull
 docker compose up -d --build
 ```
-*(Nhờ cơ chế Docker layer cache, chỉ những phần code thay đổi mới cần build lại, quá trình deploy mất chưa tới 1 phút)*
+
+_(Nhờ cơ chế Docker layer cache, chỉ những phần code thay đổi mới cần build lại, quá trình deploy mất chưa tới 1 phút)_
 
 ### Khởi động lại hoặc dừng hệ thống
+
 ```bash
 # Khởi động lại toàn bộ
 docker compose restart
@@ -233,6 +259,7 @@ docker compose down
 ```
 
 ### Sao lưu (Backup) & Khôi phục Cơ sở dữ liệu
+
 ```bash
 # Sao lưu cơ sở dữ liệu ra file backup.sql
 docker compose exec -T db pg_dump -U cms cms > cms_backup_$(date +%F).sql
@@ -242,7 +269,9 @@ docker compose exec -T db psql -U cms cms < cms_backup_2026-10-12.sql
 ```
 
 ### Sao lưu thư mục Media (Ảnh tải lên)
+
 Thư mục ảnh được lưu trong Docker volume `cms_media`. Bạn có thể nén và sao lưu ra ngoài:
+
 ```bash
 docker run --rm -v cms_media:/volume -v $(pwd):/backup alpine tar czf /backup/media_backup_$(date +%F).tar.gz -C /volume .
 ```

@@ -16,6 +16,18 @@ const nextConfig: NextConfig = {
       {
         protocol: "http",
         hostname: "localhost",
+        port: "4001",
+        pathname: "/media/**",
+      },
+      {
+        protocol: "http",
+        hostname: "127.0.0.1",
+        port: "4001",
+        pathname: "/media/**",
+      },
+      {
+        protocol: "http",
+        hostname: "localhost",
         port: "3001",
         pathname: "/media/**",
       },
@@ -63,7 +75,7 @@ const nextConfig: NextConfig = {
     ];
   },
   async rewrites() {
-    const cmsUrl = process.env.CMS_URL ?? "http://localhost:3001";
+    const cmsUrl = process.env.CMS_URL ?? "http://localhost:4001";
     return [
       {
         source: "/api/v1/:path*",

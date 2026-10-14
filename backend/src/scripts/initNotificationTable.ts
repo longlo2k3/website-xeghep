@@ -4,7 +4,7 @@ import pg from 'pg';
 loadEnv();
 
 const pool = new pg.Pool({
-  connectionString: process.env.DATABASE_URI || 'postgresql://cms:cms_dev_password@localhost:5432/cms',
+  connectionString: process.env.DATABASE_URI || 'postgresql://cms:cms_dev_password@localhost:5433/cms',
 });
 
 async function run() {

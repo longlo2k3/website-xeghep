@@ -16,7 +16,7 @@ export { FALLBACK_ROUTES };
 
 const CMS =
   typeof window === "undefined"
-    ? process.env.CMS_URL ?? "http://localhost:3001"
+    ? process.env.CMS_URL ?? "http://localhost:4001"
     : process.env.NEXT_PUBLIC_CMS_URL ?? "";
 
 const REVALIDATE_SECONDS = process.env.NODE_ENV === "development" ? 0 : 60;
