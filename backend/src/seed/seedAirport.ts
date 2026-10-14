@@ -2,6 +2,8 @@ import { loadEnv } from "payload/node";
 
 import { slugify } from "../lib/seo/slugify";
 
+(process.env as Record<string, string | undefined>).NODE_ENV = "development";
+process.env.PAYLOAD_DB_PUSH = "true";
 loadEnv();
 
 const { getPayload } = await import("payload");
