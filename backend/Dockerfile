@@ -10,7 +10,7 @@ RUN apk add --no-cache libc6-compat
 # ==========================================
 FROM base AS deps
 COPY package*.json ./
-RUN npm ci
+RUN npm install
 
 # ==========================================
 # 3. Builder
