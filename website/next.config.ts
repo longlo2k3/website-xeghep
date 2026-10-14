@@ -42,6 +42,11 @@ const nextConfig: NextConfig = {
         hostname: "xegheplientinh.vn",
         pathname: "/media/**",
       },
+      {
+        protocol: "https",
+        hostname: "api.xegheplientinh.vn",
+        pathname: "/media/**",
+      },
     ],
   },
   // 5 redirect cứng đã chuyển sang middleware + GET /api/v1/redirects (CMS).

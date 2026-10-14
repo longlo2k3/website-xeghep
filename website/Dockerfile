@@ -19,6 +19,14 @@ FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# Baked in at build time: next.config rewrites (/api/v1/*) and the
+# client-side bundle (NEXT_PUBLIC_*) are evaluated during `next build`,
+# so they MUST be provided as build args (see docker-compose.yml).
+ARG CMS_URL=http://backend:4001
+ARG NEXT_PUBLIC_CMS_URL=
+ENV CMS_URL=$CMS_URL
+ENV NEXT_PUBLIC_CMS_URL=$NEXT_PUBLIC_CMS_URL
+
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 ENV PORT=4000

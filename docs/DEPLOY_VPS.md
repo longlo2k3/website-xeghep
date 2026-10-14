@@ -275,3 +275,51 @@ Thư mục ảnh được lưu trong Docker volume `cms_media`. Bạn có thể 
 ```bash
 docker run --rm -v cms_media:/volume -v $(pwd):/backup alpine tar czf /backup/media_backup_$(date +%F).tar.gz -C /volume .
 ```
+
+---
+
+## 9. Environment variables added/required (2026-10-14)
+
+All compose variables below are read from the root `.env` (see `.env.example`):
+
+| Variable | Service | Notes |
+|---|---|---|
+| `CMS_URL` | website (build arg + runtime) | Default `http://backend:4001`. The `/api/v1/*` rewrite target is baked at BUILD time, so it must be passed as a build arg (already wired in `docker-compose.yml`). |
+| `NEXT_PUBLIC_CMS_URL` | website (build arg) | Optional. Empty = browser calls go same-origin to `/api/v1/*` and are proxied by the website rewrite (recommended). |
+| `REVALIDATE_SECRET` | backend + website | MUST be the same value on both, otherwise website returns 401 and ISR never refreshes. |
+| `REVALIDATE_URL` | backend | Default `http://website:4000`. |
+| `MIN_LEAD_TIME_MINUTES` | backend | Optional, blank = 15. |
+| `NOTIFY_EMAIL_WEBHOOK` / `NOTIFY_EMAIL_TO` | backend | Optional email fallback for booking notifications. |
+| `SEED_EDITOR_*` / `SEED_DISPATCHER_*` | backend | Optional extra seed accounts (used by `npm run seed`). |
+| `SEED_IMAGE_SOURCE_DIR` | backend | Only for `npm run seed:media`; blank on VPS = script warns and skips. |
+| `ANONYMIZE_MONTHS` | backend | Only for `npm run anonymize:pii`. |
+
+## 10. Post-deploy smoke test (run on the VPS)
+
+```bash
+# 1. Containers up
+docker compose ps
+
+# 2. Backend API direct
+curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:4001/api/v1/routes        # 200
+curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:4001/api/v1/seo/sitemap    # 200
+
+# 3. Website rewrite -> backend (this is the CMS_URL build arg check)
+curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:4000/api/v1/routes         # 200 (NOT 404/500)
+
+# 4. Admin SPA -> backend proxy
+curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:4002/api/v1/settings/company # 200
+
+# 5. Revalidate webhook secret is shared (expect 200, not 401)
+curl -s -o /dev/null -w "%{http_code}\n" -X POST http://127.0.0.1:4000/api/v1/webhooks/revalidate \
+  -H "content-type: application/json" -H "x-revalidate-secret: $REVALIDATE_SECRET" \
+  -d "{\"collection\":\"routes\",\"slug\":null,\"previousSlug\":null,\"action\":\"update\"}"
+
+# 6. Through nginx (after DNS + certbot)
+curl -s -o /dev/null -w "%{http_code}\n" https://xegheplientinh.vn/
+curl -s -o /dev/null -w "%{http_code}\n" https://api.xegheplientinh.vn/api/v1/routes
+```
+
+If step 3 returns 500 with "Failed to proxy http://localhost:4001/...", the website
+image was built WITHOUT the `CMS_URL` build arg - rebuild with
+`docker compose build --no-cache website`.

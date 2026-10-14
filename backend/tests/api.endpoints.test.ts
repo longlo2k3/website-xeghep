@@ -267,7 +267,7 @@ describe('serializeRouteCard / serializeRouteDetail (pure)', () => {
     expect(card.bannerLabel).toBe('Hải Phòng ⇔ Hà Nội ⇔ Nội Bài');
     expect(card.pricingDetails.map((r) => r.price)).toEqual(['400k', '700k', 'từ 899k', 'từ 999k']);
     expect(card.thumbnail).toEqual({
-      url: 'http://localhost:3001/media/noibai-card.webp',
+      url: 'http://localhost:4001/media/noibai-card.webp',
       width: 640,
       height: 400,
       alt: 'Xe ghép',
@@ -294,7 +294,7 @@ describe('serializeRouteCard / serializeRouteDetail (pure)', () => {
       metaTitle: 'Xe Ghép Hải Phòng Hà Nội Nội Bài',
       appendBrand: true,
       metaDescription: 'Mô tả',
-      ogImage: { url: 'http://localhost:3001/media/noibai-og.webp', width: 1200, height: 630, alt: 'OG' },
+      ogImage: { url: 'http://localhost:4001/media/noibai-og.webp', width: 1200, height: 630, alt: 'OG' },
       noindex: false,
     });
     expect(detail.updatedAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+07:00$/);
